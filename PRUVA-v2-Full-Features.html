@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PRUVA – AI Transaction Protection v2</title>
+<style>
+:root {
+  --bg: #0F172A;
+  --card: #1E293B;
+  --text: #F1F5F9;
+  --primary: #3B82F6;
+  --success: #10B981;
+  --warn: #F59E0B;
+  --danger: #EF4444;
+  --border: #334155;
+}
+[data-theme="light"] {
+  --bg: #F8FAFC;
+  --card: #FFFFFF;
+  --text: #0F172A;
+  --border: #E2E8F0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 70px;
+  transition: background 0.3s, color 0.3s;
+}
+.header {
+  padding: 16px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+.header h1 { font-size: 18px; color: var(--primary); }
+.container { padding: 16px; max-width: 480px; margin: 0 auto; }
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.score-circle {
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  border: 8px solid var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  margin: 16px auto;
+  font-size: 28px; font-weight: bold;
+}
+.stats { display: flex; justify-content: space-around; text-align: center; }
+.stats div { flex: 1; }
+.stats strong { display: block; font-size: 20px; color: var(--primary); }
+textarea, input[type="text"], input[type="url"], input[type="file"] {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+button {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+button:active { opacity: 0.8; }
+button.secondary { background: var(--border); color: var(--text); margin-top: 8px; }
+button.danger { background: var(--danger); }
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0;
+  z-index: 100;
+}
+.bottom-nav button {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 11px;
+  padding: 4px;
+  width: auto;
+  opacity: 0.6;
+}
+.bottom-nav button.active { color: var(--primary); opacity: 1; }
+.bottom-nav span { display: block; font-size: 20px; }
+.progress-bar {
+  height: 12px;
+  background: var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--success);
+  width: 0%;
+  transition: width 0.3s;
+}
+.checklist label {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+}
+.checklist input { margin-right: 10px; width: 20px; height: 20px; }
+.history-item {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.history-item:active { background: rgba(59,130,246,0.1); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+.badge.safe { background: var(--success); color: white; }
+.badge.warn { background: var(--warn); color: black; }
+.badge.danger { background: var(--danger); color: white; }
+.accordion-item { margin-bottom: 8px; }
+.accordion-header {
+  padding: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.accordion-content {
+  display: none;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.accordion-content.open { display: block; }
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal.active { display: flex; }
+.modal-content {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 400px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--card);
+  color: var(--text);
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--primary);
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 300;
+  max-width: 90%;
+  text-align: center;
+}
+.toast.show { opacity: 1; }
+.result-box { margin-top: 16px; padding: 12px; border-radius: 8px; background: var(--bg); }
+.reasons li { margin: 4px 0; }
+.highlight { background: #EF4444; color: white; padding: 0 2px; border-radius: 3px; }
+.stat-bar { height: 8px; background: var(--border); border-radius: 4px; margin: 4px 0; overflow: hidden; }
+.stat-fill { height: 100%; background: var(--primary); }
+.smart-tip { background: rgba(245,158,11,0.15); padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>PRUVA v2</h1>
+  <small>AI Transaction Protection</small>
+</div>
+
+<div class="container">
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="section active">
+    <div class="card">
+      <h2 id="greeting">Halo, Pengguna!</h2>
+      <div class="score-circle" id="securityScore">85</div>
+      <p style="text-align:center; margin-bottom:16px;">Skor Keamanan Anda</p>
+      <div class="stats">
+        <div><strong id="totalChecks">0</strong><span>Total Pemeriksaan</span></div>
+        <div><strong id="dangerCount">0</strong><span>Ancaman Terdeteksi</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Statistik Risiko</h3>
+      <div id="riskStats"></div>
+    </div>
+    <div class="card">
+      <h3>Tips Cepat</h3>
+      <p style="margin-top:8px; font-size:14px;">Selalu verifikasi sebelum transfer. Jangan percaya pesan yang meminta OTP atau data pribadi.</p>
+    </div>
+  </div>
+
+  <!-- DETEKSI PESAN -->
+  <div id="detect" class="section">
+    <div class="card">
+      <h3>Deteksi Pesan Scam</h3>
+      <textarea id="messageInput" rows="6" placeholder="Tempel pesan yang mencurigakan di sini..." oninput="realtimeHighlight()"></textarea>
+      <div id="highlightPreview" style="font-size:14px; margin-bottom:12px; min-height:20px;"></div>
+      <button onclick="analyzeMessage()">Analisis Pesan + Behavioral Scoring</button>
+      <div id="detectResult" class="result-box" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- LINK + QR -->
+  <div id="link" class="section">
+    <div class="card">
+      <h3>Cek Link</h3>
+      <input type="url" id="urlInput" placeholder="https://contoh.com">
+      <button onclick="checkLink()">Periksa Link + Domain Check</button>
+      <div id="linkResult" class="result-box" style="display:none;"></div>
+    </div>
+    <div class="card">
+      <h3>QR Code Scanner</h3>
+      <p style="font-size:14px; margin-bottom:10px;">Ambil foto QR lalu upload, atau tempel isi QR di bawah.</p>
+      <input type="file" id="qrFile" accept="image/*" onchange="handleQRFile(this)">
+      <input type="text" id="qrText" placeholder="Atau tempel isi QR / link di sini">
+      <button onclick="analyzeQR()">Analisis QR</button>
+      <div id="qrResult" class="result-box" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- TRANSAKSI -->
+  <div id="transaction" class="section">
+    <div class="card">
+      <h3>Checklist Keamanan Transfer Pintar</h3>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <p id="progressText" style="text-align:center; margin-bottom:12px;">0% selesai</p>
+      <div class="checklist" id="checklist">
+        <label><input type="checkbox" onchange="updateProgress()"> Saya sudah verifikasi nomor rekening penerima</label>
+        <label><input type="checkbox" onchange="updateProgress()"> Tidak ada tekanan untuk transfer segera</label>
+        <label><input type="checkbox" onchange="updateProgress()"> Saya mengenal orang/perusahaan penerima</label>
+        <label><input type="checkbox" onchange="updateProgress()"> Saya tidak diminta kirim OTP atau password</label>
+        <label><input type="checkbox" onchange="updateProgress()"> Jumlah transfer sesuai yang disepakati</label>
+        <label><input type="checkbox" onchange="updateProgress()"> Saya sudah cek di aplikasi resmi bank</label>
+      </div>
+      <div id="smartTip" class="smart-tip" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- MENU -->
+  <div id="menu" class="section">
+    <div class="card">
+      <h3>Menu</h3>
+      <button onclick="showSection('history')">Riwayat + Statistik</button>
+      <button class="secondary" onclick="showSection('education')">Edukasi & Simulasi</button>
+      <button class="secondary" onclick="showSection('settings')">Pengaturan</button>
+      <button class="secondary" onclick="exportReport()">Export Laporan Keamanan</button>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="history" class="section">
+    <div class="card">
+      <h3>Riwayat</h3>
+      <div id="historyList"></div>
+      <button class="danger" onclick="confirmClearHistory()">Hapus Semua Riwayat</button>
+      <button class="secondary" onclick="showSection('menu')">Kembali</button>
+    </div>
+  </div>
+
+  <!-- EDUCATION + SIMULASI -->
+  <div id="education" class="section">
+    <div class="card">
+      <h3>Tips Menghindari Penipuan</h3>
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">Jangan pernah berikan OTP</div>
+        <div class="accordion-content">Bank atau layanan resmi tidak pernah meminta OTP melalui chat atau telepon. Jika diminta, itu penipuan.</div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">Verifikasi nomor rekening</div>
+        <div class="accordion-content">Selalu cek nama pemilik rekening di aplikasi bank resmi sebelum transfer. Jangan percaya nama yang dikirim di chat.</div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">Waspada hadiah dan undian</div>
+        <div class="accordion-content">Jika Anda diminta transfer dulu untuk menerima hadiah, itu pasti penipuan. Hadiah asli tidak pernah minta uang.</div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">Link mencurigakan</div>
+        <div class="accordion-content">Jangan klik link dari pesan yang tidak dikenal. Periksa domain dengan teliti. Gunakan fitur Cek Link di aplikasi ini.</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Simulasi Red Flag Detector</h3>
+      <select id="scenarioSelect" style="width:100%; padding:12px; margin-bottom:12px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px;">
+        <option value="">Pilih skenario...</option>
+        <option value="otp">Ada yang minta OTP lewat WA</option>
+        <option value="hadiah">Menang undian, diminta transfer biaya admin</option>
+        <option value="rekening">Diminta transfer ke rekening baru</option>
+        <option value="urgent">Pesan "segera transfer dalam 5 menit"</option>
+      </select>
+      <button onclick="runSimulation()">Jalankan Simulasi</button>
+      <div id="simResult" class="result-box" style="display:none;"></div>
+    </div>
+    <button class="secondary" onclick="showSection('menu')">Kembali</button>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="settings" class="section">
+    <div class="card">
+      <h3>Pengaturan</h3>
+      <label style="display:block; margin-bottom:8px;">Nama Panggilan</label>
+      <input type="text" id="nicknameInput" placeholder="Masukkan nama panggilan">
+      <button onclick="saveNickname()">Simpan Nama</button>
+      <div style="margin:20px 0;">
+        <label>Tema</label>
+        <button class="secondary" id="themeBtn" onclick="toggleTheme()">Mode Gelap</button>
+      </div>
+      <button class="danger" onclick="confirmReset()">Reset Semua Data</button>
+      <button class="secondary" onclick="showSection('menu')">Kembali</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button onclick="showSection('dashboard')" id="nav-dashboard" class="active">
+    <span>🏠</span>Beranda
+  </button>
+  <button onclick="showSection('detect')" id="nav-detect">
+    <span>🔍</span>Deteksi
+  </button>
+  <button onclick="showSection('link')" id="nav-link">
+    <span>🔗</span>Link/QR
+  </button>
+  <button onclick="showSection('transaction')" id="nav-transaction">
+    <span>✅</span>Transaksi
+  </button>
+  <button onclick="showSection('menu')" id="nav-menu">
+    <span>☰</span>Menu
+  </button>
+</div>
+
+<!-- MODAL -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <h3 id="modalTitle"></h3>
+    <div id="modalBody"></div>
+    <button onclick="closeModal()" style="margin-top:16px;">Tutup</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+<script>
+const GROQ_API_KEY = 'MASUKKAN_API_KEY_DI_SINI';
+
+let history = JSON.parse(localStorage.getItem('pruva_history') || '[]');
+let nickname = localStorage.getItem('pruva_nickname') || 'Pengguna';
+let theme = localStorage.getItem('pruva_theme') || 'dark';
+
+const scamPatterns = [
+  {re: /otp|one.?time.?password|kode.?verifikasi/i, name: 'Permintaan OTP'},
+  {re: /hadiah|menang|undian|prize|congratulations/i, name: 'Hadiah/Undian'},
+  {re: /segera|urgent|segera.?transfer|dalam.?[0-9]+.?menit|dalam.?1.?jam/i, name: 'Tekanan Waktu'},
+  {re: /rekening.?anda.?diblokir|akun.?anda.?terkunci/i, name: 'Ancaman Akun'},
+  {re: /kirim.?uang.?dulu|bayar.?biaya.?admin|transfer.?dulu/i, name: 'Minta Transfer Dulu'},
+  {re: /password|pin|cvv|nomor.?kartu/i, name: 'Data Sensitif'}
+];
+
+function init() {
+  document.body.setAttribute('data-theme', theme);
+  updateThemeBtn();
+  document.getElementById('greeting').textContent = `Halo, ${nickname}!`;
+  document.getElementById('nicknameInput').value = nickname;
+  updateStats();
+  renderHistory();
+  renderRiskStats();
+}
+
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
+  const nav = document.getElementById('nav-' + id);
+  if (nav) nav.classList.add('active');
+  if (id === 'history') renderHistory();
+  if (id === 'dashboard') renderRiskStats();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function openModal(title, body) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = body;
+  document.getElementById('modal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+}
+
+function saveHistory(item) {
+  history.unshift(item);
+  if (history.length > 100) history.pop();
+  localStorage.setItem('pruva_history', JSON.stringify(history));
+  updateStats();
+  renderRiskStats();
+}
+
+function updateStats() {
+  document.getElementById('totalChecks').textContent = history.length;
+  const dangers = history.filter(h => h.level === 'danger').length;
+  document.getElementById('dangerCount').textContent = dangers;
+  const score = Math.max(20, 100 - dangers * 6);
+  document.getElementById('securityScore').textContent = score;
+  document.getElementById('securityScore').style.borderColor = score > 70 ? 'var(--success)' : score > 40 ? 'var(--warn)' : 'var(--danger)';
+}
+
+function renderRiskStats() {
+  const el = document.getElementById('riskStats');
+  if (!el) return;
+  const total = history.length || 1;
+  const danger = history.filter(h => h.level === 'danger').length;
+  const warn = history.filter(h => h.level === 'warn').length;
+  const safe = total - danger - warn;
+  el.innerHTML = `
+    <div>Danger: ${danger} <div class="stat-bar"><div class="stat-fill" style="width:${(danger/total)*100}%;background:var(--danger)"></div></div></div>
+    <div>Warn: ${warn} <div class="stat-bar"><div class="stat-fill" style="width:${(warn/total)*100}%;background:var(--warn)"></div></div></div>
+    <div>Safe: ${safe} <div class="stat-bar"><div class="stat-fill" style="width:${(safe/total)*100}%;background:var(--success)"></div></div></div>
+  `;
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (history.length === 0) {
+    list.innerHTML = '<p style="text-align:center; padding:20px;">Belum ada riwayat</p>';
+    return;
+  }
+  list.innerHTML = history.map((h, i) => `
+    <div class="history-item" onclick="showHistoryDetail(${i})">
+      <div style="display:flex; justify-content:space-between;">
+        <strong>${h.type === 'message' ? 'Pesan' : h.type === 'link' ? 'Link' : 'QR'}</strong>
+        <span class="badge ${h.level}">${h.level.toUpperCase()}</span>
+      </div>
+      <small>${new Date(h.date).toLocaleString('id-ID')}</small>
+      <p style="font-size:13px; margin-top:4px; opacity:0.8;">${h.preview}</p>
+    </div>
+  `).join('');
+}
+
+function showHistoryDetail(index) {
+  const h = history[index];
+  const reasons = (h.reasons || []).map(r => `<li>${r}</li>`).join('');
+  openModal('Detail Pemeriksaan', `
+    <p><strong>Tipe:</strong> ${h.type}</p>
+    <p><strong>Level:</strong> <span class="badge ${h.level}">${h.level}</span></p>
+    <p><strong>Skor:</strong> ${h.score}/100</p>
+    <p style="margin-top:8px;"><strong>Konten:</strong></p>
+    <p style="background:var(--bg); padding:8px; border-radius:6px; font-size:14px; word-break:break-all;">${h.content}</p>
+    <p style="margin-top:8px;"><strong>Alasan:</strong></p>
+    <ul class="reasons">${reasons}</ul>
+  `);
+}
+
+function confirmClearHistory() {
+  openModal('Konfirmasi', `
+    <p>Yakin ingin menghapus semua riwayat?</p>
+    <button class="danger" onclick="clearHistory(); closeModal();" style="margin-top:12px;">Ya, Hapus</button>
+  `);
+}
+
+function clearHistory() {
+  history = [];
+  localStorage.removeItem('pruva_history');
+  renderHistory();
+  updateStats();
+  renderRiskStats();
+  showToast('Riwayat dihapus');
+}
+
+// Real-time highlight
+function realtimeHighlight() {
+  const text = document.getElementById('messageInput').value;
+  let html = text;
+  scamPatterns.forEach(p => {
+    html = html.replace(p.re, match => `<span class="highlight">${match}</span>`);
+  });
+  document.getElementById('highlightPreview').innerHTML = html || '<span style="opacity:0.5">Preview highlight muncul di sini</span>';
+}
+
+// Behavioral scoring
+function behavioralScore(text) {
+  let score = 0;
+  let reasons = [];
+  const matches = scamPatterns.filter(p => p.re.test(text));
+  score += matches.length * 15;
+  matches.forEach(m => reasons.push(m.name + ' terdeteksi'));
+
+  if ((text.match(/!/g) || []).length > 3) { score += 10; reasons.push('Banyak tanda seru (tekanan)'); }
+  if (text.length > 200 && matches.length > 0) { score += 10; reasons.push('Pesan panjang + pola mencurigakan'); }
+  if (/segera|urgent|cepat|sekarang/i.test(text) && /transfer|kirim|bayar/i.test(text)) {
+    score += 20; reasons.push('Kombinasi tekanan waktu + permintaan transfer');
+  }
+  return { score: Math.min(100, score), reasons };
+}
+
+async function analyzeMessage() {
+  const text = document.getElementById('messageInput').value.trim();
+  if (!text) { showToast('Masukkan teks pesan'); return; }
+
+  const behavior = behavioralScore(text);
+  let level = behavior.score >= 60 ? 'danger' : behavior.score >= 30 ? 'warn' : 'safe';
+
+  document.getElementById('detectResult').style.display = 'block';
+  document.getElementById('detectResult').innerHTML = '<p>Menganalisis...</p>';
+
+  if (GROQ_API_KEY === 'MASUKKAN_API_KEY_DI_SINI') {
+    finishAnalysis(text, level, behavior.score, behavior.reasons, 'message');
+    return;
+  }
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama3-8b-8192',
+        messages: [{
+          role: 'user',
+          content: `Analisis teks berikut, apakah ini penipuan? Berikan respons HANYA dalam format JSON: {"level": "safe|warn|danger", "score": 0-100, "reasons": ["alasan1", "alasan2"]}. Teks: ${text}`
+        }],
+        temperature: 0.1
+      })
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const content = data.choices[0].message.content;
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      finishAnalysis(text, parsed.level || level, parsed.score || behavior.score, parsed.reasons || behavior.reasons, 'message');
+    } else throw new Error();
+  } catch (e) {
+    showToast('API gagal, pakai analisis lokal');
+    finishAnalysis(text, level, behavior.score, behavior.reasons, 'message');
+  }
+}
+
+function finishAnalysis(content, level, score, reasons, type) {
+  const resultDiv = document.getElementById(type === 'message' ? 'detectResult' : type === 'link' ? 'linkResult' : 'qrResult');
+  resultDiv.style.display = 'block';
+  resultDiv.innerHTML = `
+    <p><span class="badge ${level}">${level.toUpperCase()}</span> Skor: ${score}/100</p>
+    <ul class="reasons">${(reasons||[]).map(r => `<li>${r}</li>`).join('')}</ul>
+  `;
+  saveHistory({
+    type,
+    content,
+    preview: content.substring(0, 70) + (content.length > 70 ? '...' : ''),
+    level,
+    score,
+    reasons,
+    date: Date.now()
+  });
+  showToast('Analisis selesai');
+}
+
+// Link checker + simple domain reputation simulation
+function checkLink() {
+  const urlStr = document.getElementById('urlInput').value.trim();
+  if (!urlStr) { showToast('Masukkan URL'); return; }
+  analyzeURL(urlStr, 'link');
+}
+
+function analyzeURL(urlStr, type) {
+  let result = { level: 'safe', score: 15, reasons: [] };
+  try {
+    const url = new URL(urlStr.startsWith('http') ? urlStr : 'https://' + urlStr);
+    if (url.protocol !== 'https:') {
+      result.level = 'warn'; result.score = 55; result.reasons.push('Tidak HTTPS');
+    }
+    const suspicious = ['bit.ly','tinyurl','goo.gl','t.co','short.link','phish','login-','secure-','verify-','update-','account-'];
+    if (suspicious.some(s => url.hostname.toLowerCase().includes(s))) {
+      result.level = 'danger'; result.score = 88; result.reasons.push('Domain mencurigakan / shortener');
+    }
+    if (url.hostname.split('.').length > 4) {
+      result.score = Math.max(result.score, 65);
+      if (result.level !== 'danger') result.level = 'warn';
+      result.reasons.push('Terlalu banyak subdomain');
+    }
+    // Simulated reputation
+    if (Math.random() < 0.15 && result.level !== 'danger') {
+      result.reasons.push('Domain pernah dilaporkan (simulasi database)');
+      result.score += 20;
+      if (result.level === 'safe') result.level = 'warn';
+    }
+    if (result.reasons.length === 0) result.reasons.push('Tidak ada indikasi berbahaya yang jelas');
+  } catch (e) {
+    result = { level: 'danger', score: 95, reasons: ['Format URL tidak valid'] };
+  }
+  finishAnalysis(urlStr, result.level, result.score, result.reasons, type);
+}
+
+// QR
+function handleQRFile(input) {
+  if (input.files && input.files[0]) {
+    showToast('Foto QR diterima. Tempel isi QR atau link di kolom bawah lalu analisis.');
+    // Pure JS tanpa library tidak bisa decode QR otomatis, jadi user tempel manual
+  }
+}
+
+function analyzeQR() {
+  const text = document.getElementById('qrText').value.trim();
+  if (!text) { showToast('Tempel isi QR / link'); return; }
+  if (text.startsWith('http') || text.includes('.')) {
+    analyzeURL(text, 'qr');
+  } else {
+    finishAnalysis(text, 'warn', 40, ['Isi QR bukan link standar, periksa manual'], 'qr');
+  }
+}
+
+// Checklist pintar
+function updateProgress() {
+  const checks = document.querySelectorAll('#checklist input');
+  const checked = [...checks].filter(c => c.checked).length;
+  const percent = Math.round((checked / checks.length) * 100);
+  document.getElementById('progressFill').style.width = percent + '%';
+  document.getElementById('progressText').textContent = percent + '% selesai';
+
+  const tipEl = document.getElementById('smartTip');
+  if (percent < 100) {
+    const unchecked = [...checks].filter(c => !c.checked);
+    if (unchecked.length) {
+      tipEl.style.display = 'block';
+      tipEl.innerHTML = `<strong>Rekomendasi:</strong> Pastikan kamu sudah "${unchecked[0].parentElement.textContent.trim()}" sebelum transfer.`;
+    }
+  } else {
+    tipEl.style.display = 'block';
+    tipEl.innerHTML = '<strong>Bagus!</strong> Semua checklist aman terpenuhi.';
+  }
+}
+
+// Simulasi
+function runSimulation() {
+  const val = document.getElementById('scenarioSelect').value;
+  if (!val) { showToast('Pilih skenario'); return; }
+  const scenarios = {
+    otp: {level:'danger', score:95, reasons:['Bank tidak pernah minta OTP lewat chat','Ini teknik social engineering klasik']},
+    hadiah: {level:'danger', score:90, reasons:['Hadiah asli tidak minta transfer dulu','Pola penipuan undian palsu']},
+    rekening: {level:'warn', score:60, reasons:['Selalu verifikasi nama rekening di app bank resmi','Jangan percaya perubahan rekening mendadak']},
+    urgent: {level:'danger', score:85, reasons:['Tekanan waktu adalah red flag utama','Penipu memaksa keputusan cepat']}
+  };
+  const s = scenarios[val];
+  const el = document.getElementById('simResult');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <p><span class="badge ${s.level}">${s.level.toUpperCase()}</span> Skor Risiko: ${s.score}/100</p>
+    <ul class="reasons">${s.reasons.map(r => `<li>${r}</li>`).join('')}</ul>
+    <p style="margin-top:8px;"><strong>Tindakan:</strong> Abaikan dan blokir pengirim. Jangan transfer.</p>
+  `;
+}
+
+// Education accordion
+function toggleAccordion(header) {
+  header.nextElementSibling.classList.toggle('open');
+}
+
+// Export
+function exportReport() {
+  const report = `LAPORAN KEAMANAN PRUVA\nNama: ${nickname}\nTanggal: ${new Date().toLocaleString('id-ID')}\nTotal Pemeriksaan: ${history.length}\nAncaman: ${history.filter(h=>h.level==='danger').length}\n\nRIWAYAT TERAKHIR:\n` +
+    history.slice(0,10).map(h => `${new Date(h.date).toLocaleDateString()} - ${h.type} - ${h.level} (${h.score}) - ${h.preview}`).join('\n');
+  const blob = new Blob([report], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'PRUVA-Laporan-Keamanan.txt';
+  a.click();
+  showToast('Laporan berhasil diexport');
+}
+
+// Settings
+function saveNickname() {
+  const name = document.getElementById('nicknameInput').value.trim();
+  if (!name) { showToast('Nama tidak boleh kosong'); return; }
+  nickname = name;
+  localStorage.setItem('pruva_nickname', name);
+  document.getElementById('greeting').textContent = `Halo, ${name}!`;
+  showToast('Nama disimpan');
+}
+
+function toggleTheme() {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  document.body.setAttribute('data-theme', theme);
+  localStorage.setItem('pruva_theme', theme);
+  updateThemeBtn();
+  showToast('Tema diubah');
+}
+
+function updateThemeBtn() {
+  document.getElementById('themeBtn').textContent = theme === 'dark' ? 'Mode Gelap' : 'Mode Terang';
+}
+
+function confirmReset() {
+  openModal('Konfirmasi Reset', `
+    <p>Ini akan menghapus semua data. Lanjutkan?</p>
+    <button class="danger" onclick="resetAll(); closeModal();" style="margin-top:12px;">Ya, Reset</button>
+  `);
+}
+
+function resetAll() {
+  localStorage.clear();
+  history = [];
+  nickname = 'Pengguna';
+  theme = 'dark';
+  document.body.setAttribute('data-theme', 'dark');
+  document.getElementById('greeting').textContent = 'Halo, Pengguna!';
+  document.getElementById('nicknameInput').value = '';
+  updateStats();
+  updateThemeBtn();
+  renderRiskStats();
+  showToast('Semua data direset');
+  showSection('dashboard');
+}
+
+init();
+</script>
+</body>
+</html>
